@@ -1,0 +1,40 @@
+name: Grant Beta Access
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  grant-access:
+    if: |
+      contains(github.event.issue.labels.*.name, 'beta-signup') &&
+      github.event.comment.body == '/approve' &&
+      (github.event.comment.user.login == 'data-goblin' || github.event.comment.user.login == 'maxanatsko')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Grant read access to pbir.tools
+        env:
+          GH_TOKEN: ${{ secrets.BETA_ACCESS_PAT }}
+        run: |
+          USERNAME="${{ github.event.issue.user.login }}"
+          echo "Granting read access to $USERNAME..."
+          gh api repos/maxanatsko/pbir.tools/collaborators/$USERNAME \
+            -f permission=pull \
+            --method PUT
+          echo "Access granted for $USERNAME"
+
+      - name: Comment confirmation
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "Access granted. You should receive a GitHub invitation to **pbir.tools** shortly. Check your email or GitHub notifications."
+
+      - name: Add approved label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --add-label "approved"

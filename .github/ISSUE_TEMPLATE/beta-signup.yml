@@ -1,6 +1,6 @@
 name: Private Beta Signup
 description: Sign up for the pbir.tools private beta
-title: "Beta signup: @{{ github.actor }}"
+title: "Beta signup"
 labels: ["beta-signup"]
 body:
   - type: markdown

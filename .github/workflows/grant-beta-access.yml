@@ -4,6 +4,10 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   grant-access:
     if: |
@@ -17,19 +21,35 @@ jobs:
           GH_TOKEN: ${{ secrets.BETA_ACCESS_PAT }}
         run: |
           USERNAME="${{ github.event.issue.user.login }}"
+          TARGET_REPO="maxanatsko/pbir.tools"
+          TARGET_OWNER="$(gh api repos/$TARGET_REPO --jq '.owner.login')"
+
+          if [ "$USERNAME" = "$TARGET_OWNER" ]; then
+            echo "ACCESS_RESULT=already-has-access" >> "$GITHUB_ENV"
+            echo "$USERNAME already owns $TARGET_REPO, skipping collaborator invite."
+            exit 0
+          fi
+
           echo "Granting read access to $USERNAME..."
-          gh api repos/maxanatsko/pbir.tools/collaborators/$USERNAME \
+          gh api repos/$TARGET_REPO/collaborators/$USERNAME \
             -f permission=pull \
             --method PUT
+          echo "ACCESS_RESULT=granted" >> "$GITHUB_ENV"
           echo "Access granted for $USERNAME"
 
       - name: Comment confirmation
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if [ "$ACCESS_RESULT" = "already-has-access" ]; then
+            BODY="Access check completed. You already have access to **pbir.tools**, so no invitation was needed."
+          else
+            BODY="Access granted. You should receive a GitHub invitation to **pbir.tools** shortly. Check your email or GitHub notifications."
+          fi
+
           gh issue comment "${{ github.event.issue.number }}" \
             --repo "${{ github.repository }}" \
-            --body "Access granted. You should receive a GitHub invitation to **pbir.tools** shortly. Check your email or GitHub notifications."
+            --body "$BODY"
 
       - name: Add approved label
         env:

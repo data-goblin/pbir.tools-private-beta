@@ -1,0 +1,24 @@
+name: Normalize Beta Signup Title
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  rename-issue:
+    if: |
+      contains(github.event.issue.labels.*.name, 'beta-signup') ||
+      github.event.issue.title == 'Beta signup'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set issue title to include requestor username
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --title "Beta signup: @${{ github.event.issue.user.login }}"

@@ -12,7 +12,7 @@ jobs:
   grant-access:
     if: |
       contains(github.event.issue.labels.*.name, 'beta-signup') &&
-      github.event.comment.body == '/approve' &&
+      (github.event.comment.body == '/approve' || github.event.comment.body == '/approved') &&
       (github.event.comment.user.login == 'data-goblin' || github.event.comment.user.login == 'maxanatsko')
     runs-on: ubuntu-latest
     steps:
